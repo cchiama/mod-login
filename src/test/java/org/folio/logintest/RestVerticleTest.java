@@ -37,6 +37,9 @@ public class RestVerticleTest {
   private static String postCredsRequest = "{\"username\": \"gollum\", \"userId\":\"bc6e4932-6415-40e2-ac1e-67ecdd665366\", \"password\":\"12345\"}";
 
   private static String postCredsRequest2 = "{\"username\": \"gollum\", \"password\":\"12345\"}";
+  
+  private static String postCredsRequestBad = "{ \"id\":\"99999999-9999-9999-9999-999999999999\",  \"username\":\"superuser\"," +
+    "\"personal\": {  \"lastName\": \"Superuser\", \"firstName\": \"Super\" }}";
 
   private static Vertx vertx;
   static int port;
@@ -186,6 +189,17 @@ public class RestVerticleTest {
        System.out.println(addPUResponse6.body +
          "\nStatus - " + addPUResponse6.code + " at " + System.currentTimeMillis() + " for "
            + addPUURL6);
+       
+       //try to add bad credentials
+       CompletableFuture<Response> addPUCF7 = new CompletableFuture();
+       String addPUURL7 = "http://localhost:"+port+"/authn/credentials";
+       send(addPUURL7, context, HttpMethod.POST, postCredsRequestBad,
+         SUPPORTED_CONTENT_TYPE_JSON_DEF, 400,  new HTTPResponseHandler(addPUCF7));
+       Response addPUResponse7 = addPUCF7.get(5, TimeUnit.SECONDS);
+       context.assertEquals(addPUResponse7.code, 400);
+       System.out.println(addPUResponse7.body +
+         "\nStatus - " + addPUResponse7.code + " at " + System.currentTimeMillis() + " for "
+           + addPUURL7);
 
 
     } catch (Exception e) {
