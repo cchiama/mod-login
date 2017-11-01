@@ -191,6 +191,7 @@ public class RestVerticleTest {
            + addPUURL6);
        
        //try to add bad credentials
+       
        CompletableFuture<Response> addPUCF7 = new CompletableFuture();
        String addPUURL7 = "http://localhost:"+port+"/authn/credentials";
        send(addPUURL7, context, HttpMethod.POST, postCredsRequestBad,
@@ -253,9 +254,14 @@ public class RestVerticleTest {
      hcr.bodyHandler( bh -> {
        Response r = new Response();
        r.code = hcr.statusCode();
-       r.body = bh.toJsonObject();
+       try {
+        r.body = bh.toJsonObject();
+       } catch(Exception e) {
+         r.body = null;
+       }
        event.complete(r);
      });
+     hcr.exceptionHandler( e -> { event.completeExceptionally(e);});
    }
  }
 

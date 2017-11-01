@@ -54,7 +54,7 @@ public class UserMock extends AbstractVerticle {
       } else {
         context.response()
                 .setStatusCode(404)
-                .end("Not found");
+                .end("Not found for query '" + context.request().getParam("query") + "'");
       }
     } catch(Exception e) {
         context.response()

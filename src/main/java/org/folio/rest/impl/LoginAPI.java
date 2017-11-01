@@ -84,6 +84,10 @@ public class LoginAPI implements AuthnResource {
     if(requestToken == null) {
       requestToken = "";
     }
+    if(username == null) {
+      future.fail("No username provided to look up");
+      return future;
+    }
     try {
       requestURL = okapiURL + "/users?query=username==" + URLEncoder.encode(username, "UTF-8");
     } catch(Exception e) {
@@ -334,9 +338,14 @@ public class LoginAPI implements AuthnResource {
   }
 
   @Override
-  public void postAuthnCredentials(LoginCredentials entity, Map<String, String> okapiHeaders, Handler<AsyncResult<Response>> asyncResultHandler, Context vertxContext) throws Exception {
+  public void postAuthnCredentials(
+          LoginCredentials entity, 
+          Map<String, String> okapiHeaders, 
+          Handler<AsyncResult<Response>> asyncResultHandler, 
+          Context vertxContext) throws Exception {
     try {
       vertxContext.runOnContext(v -> {
+        try {
         String tenantId = getTenant(okapiHeaders);
         String okapiURL = okapiHeaders.get(OKAPI_URL_HEADER);
         String requestToken = okapiHeaders.get(OKAPI_TOKEN_HEADER);
@@ -344,6 +353,13 @@ public class LoginAPI implements AuthnResource {
         if(entity.getUserId() != null) {
           userVerifyFuture = Future.succeededFuture(new JsonObject().put("id", entity.getUserId()));
         } else {
+          if(entity.getUsername() == null) {
+            String message = "No userId or username provided";
+            logger.error(message);
+            asyncResultHandler.handle(Future.succeededFuture(
+                    PostAuthnCredentialsResponse.withPlainBadRequest(message)));
+            return;
+          }
           userVerifyFuture = lookupUser(entity.getUsername(),
             tenantId, okapiURL, requestToken, vertxContext.owner());
         }
@@ -351,7 +367,9 @@ public class LoginAPI implements AuthnResource {
           if(verifyRes.failed()) {
             String message = "Error looking up user: " + verifyRes.cause().getLocalizedMessage();
             logger.error(message, verifyRes.cause());
-            asyncResultHandler.handle(Future.succeededFuture(PostAuthnCredentialsResponse.withPlainBadRequest(message)));
+            asyncResultHandler.handle(Future.succeededFuture(
+                    PostAuthnCredentialsResponse.withPlainBadRequest(message)));
+            logger.info("asyncResultHandler called");
           } else {
             JsonObject userOb = verifyRes.result();
             Criteria userIdCrit = new Criteria();
@@ -425,6 +443,12 @@ public class LoginAPI implements AuthnResource {
             }
           }
         });
+      } catch(Exception e) {
+        logger.error(e.getLocalizedMessage());
+        asyncResultHandler.handle(Future.succeededFuture(
+                PostAuthnCredentialsResponse.withPlainInternalServerError(e.getLocalizedMessage())));
+
+      }
       });
     } catch(Exception e) {
       logger.error("Error running on vertx context: " + e.getLocalizedMessage());
