@@ -37,6 +37,11 @@ public class RestVerticleTest {
   private static String postCredsRequest = "{\"username\": \"gollum\", \"userId\":\"bc6e4932-6415-40e2-ac1e-67ecdd665366\", \"password\":\"12345\"}";
 
   private static String postCredsRequest2 = "{\"username\": \"gollum\", \"password\":\"12345\"}";
+  
+  private static String postCredsRequest3 = "{\"password\" : \"12345\"}";
+  
+  private static String postCredsRequest4 = "{\"userId\":\"bc6e4932-6415-40e2-ac1e-67ecdd665366\", \"password\":\"12345\"}";
+
 
   private static Vertx vertx;
   static int port;
@@ -186,6 +191,29 @@ public class RestVerticleTest {
        System.out.println(addPUResponse6.body +
          "\nStatus - " + addPUResponse6.code + " at " + System.currentTimeMillis() + " for "
            + addPUURL6);
+       
+       /*login with creds, userid, but no username */
+       CompletableFuture<Response> addPUCF7 = new CompletableFuture();
+       String addPUURL7 = "http://localhost:"+port+"/authn/login";
+       send(addPUURL7, context, HttpMethod.POST, postCredsRequest4,
+         SUPPORTED_CONTENT_TYPE_JSON_DEF, 201,  new HTTPResponseHandler(addPUCF7));
+       Response addPUResponse7 = addPUCF7.get(5, TimeUnit.SECONDS);
+       context.assertEquals(addPUResponse7.code, 201);
+       System.out.println(addPUResponse7.body +
+         "\nStatus - " + addPUResponse7.code + " at " + System.currentTimeMillis() + " for "
+           + addPUURL7);
+       
+       /*login with creds, no userid, no username */
+       CompletableFuture<Response> addPUCF8 = new CompletableFuture();
+       String addPUURL8 = "http://localhost:"+port+"/authn/login";
+       send(addPUURL8, context, HttpMethod.POST, postCredsRequest3,
+         SUPPORTED_CONTENT_TYPE_JSON_DEF, 201,  new HTTPResponseHandler(addPUCF8));
+       Response addPUResponse8 = addPUCF8.get(5, TimeUnit.SECONDS);
+       context.assertEquals(addPUResponse8.code, 422);
+       System.out.println(addPUResponse8.body +
+         "\nStatus - " + addPUResponse8.code + " at " + System.currentTimeMillis() + " for "
+           + addPUURL8);
+       
 
 
     } catch (Exception e) {

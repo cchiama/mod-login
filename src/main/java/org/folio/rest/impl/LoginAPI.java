@@ -193,7 +193,11 @@ public class LoginAPI implements AuthnResource {
           userVerified = Future.succeededFuture(new JsonObject().put("id", entity.getUserId()).put("active", true).put("username", "__undefined__"));
         } else {
           logger.info("Need to look up user id");
-          userVerified = lookupUser(entity.getUsername(), tenantId, okapiURL, requestToken, vertxContext.owner());
+          if(entity.getUsername() == null) {
+            userVerified = Future.failedFuture("Username is null");
+          } else {
+            userVerified = lookupUser(entity.getUsername(), tenantId, okapiURL, requestToken, vertxContext.owner());
+          }
         }
         userVerified.setHandler(verifyResult -> {
           if(verifyResult.failed()) {
